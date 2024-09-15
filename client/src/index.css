@@ -1,0 +1,291 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  font-family: "Raleway", sans-serif;
+  overflow-x: hidden;
+  -ms-overflow-style: none; /* Hide the scrollbar in IE and Edge */
+  scrollbar-width: none; /* Hide the scrollbar in Firefox */
+}
+
+body::-webkit-scrollbar {
+  display: none; /* Hide the scrollbar in WebKit browsers */
+}
+
+@layer components {
+  .max-container {
+    max-width: 1728px;
+    margin: 0 auto;
+  }
+  input[type="checkbox"]:checked {
+    accent-color: linear-gradient(to right, #d80765, #ef233c);
+    mix-blend-mode: multiply;
+    /* background-image: linear-gradient(to right, #d80765 0%, #ef233c 100%); */
+  }
+  .btn-p {
+    padding: 12px 24px 12px 24px;
+  }
+
+  .container {
+    display: block;
+    max-width: 100dvw;
+    margin: 0 auto;
+  }
+
+  .border {
+    border: 1.5px solid transparent;
+    border-image: linear-gradient(to bottom, #d80765, #ef233c);
+    border-image-slice: 1;
+  }
+  .pink-gradient-border {
+    background: linear-gradient(#ffff 0 0) padding-box,
+      linear-gradient(to right, #d80765, #ef233c) border-box;
+    color: linear-gradient(to right, #d80765, #ef233c);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    display: inline-block;
+  }
+
+  .bg-gradient-checkbox {
+    background-image: linear-gradient(to right, #d80765 0%, #ef233c 100%);
+    position: relative;
+    display: inline-block; /* Ensures that the span behaves as a block with width and height */
+  }
+
+  .custom-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    width: 20px;
+    height: 20px;
+    position: relative;
+    cursor: pointer;
+    border: 2px solid #d9d9d9;
+    border-radius: 2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .custom-checkbox:checked {
+    background: linear-gradient(90deg, #ef233c 0%, #d80765 100%);
+    border: 2px solid transparent;
+    border-radius: 2px;
+  }
+
+  .custom-checkbox:checked::before {
+    content: "✓";
+    color: white;
+    font-size: 12px;
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  .custom-checkbox-error {
+    background: linear-gradient(
+      to right,
+      #d80765,
+      #ef233c
+    ); /* Gradient background */
+    background-clip: border-box;
+    border: 2px solid transparent;
+    z-index: -10;
+    position: relative;
+  }
+
+  .custom-checkbox-error::before {
+    content: "";
+    position: absolute;
+    width: 98%;
+    height: 98%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    z-index: 10;
+  }
+
+  /* Custom radio button styling */
+  .custom-radio {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .custom-radio::before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    border-radius: 50%;
+    border: 2px solid #737373; /* Default gray border */
+    background-color: transparent;
+    transition: background 0.3s ease;
+  }
+
+  .radio-input:checked + .custom-radio::before {
+    background: linear-gradient(to right, #d80765, #ef233c); /* Pink gradient */
+    border-color: transparent;
+  }
+
+  .nav-animation {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    opacity: 0;
+    width: 300px;
+    transform: translateX(-100%);
+    animation-fill-mode: forwards;
+  }
+
+  .nav-open {
+    animation: slide-in 500ms forwards;
+  }
+
+  .nav-close {
+    animation: slide-out 500ms forwards;
+  }
+
+  @keyframes slide-in {
+    0% {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0%);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-out {
+    0% {
+      transform: translateX(0%);
+      opacity: 1;
+    }
+    95% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+  }
+
+  @keyframes fadeInOut {
+    0%,
+    50.33%,
+    100% {
+      opacity: 0;
+    }
+    10%,
+    25% {
+      opacity: 1;
+    }
+  }
+
+  .image-animation {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    object-fit: cover;
+    animation: fadeInOut 12000ms ease-in infinite;
+  }
+
+  .image1 {
+    animation-delay: 0ms;
+  }
+
+  .image2 {
+    animation-delay: 4000ms;
+  }
+
+  .image3 {
+    animation-delay: 8000ms;
+  }
+
+  th:first-child {
+    border-radius: 4px 0 0 0;
+  }
+
+  th:last-child {
+    border-radius: 4px 4px 0px 0;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: white;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.317);
+    border-radius: 10px;
+    border: 3px solid #f1f1f1;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+}
+
+@layer utilities {
+  .section {
+    @apply mx-auto mt-[1rem] max-w-[1488px];
+  }
+  .header {
+    @apply w-full font-raleway text-lg  font-bold md:text-4xl;
+  }
+  .sub-header {
+    @apply text-md font-semibold  md:text-3.5xl;
+  }
+  .key-points {
+    @apply text-md font-semibold leading-[40.92px] md:text-3xl;
+  }
+  .para {
+    @apply font-nunito text-av font-normal md:text-xl;
+  }
+  .key-para {
+    @apply text-av font-normal md:text-base;
+  }
+  .key-higlights {
+    @apply text-av font-semibold md:text-xl;
+  }
+  .section-padding {
+    @apply px-2;
+  }
+  .flex-s-b {
+    @apply flex flex-row items-center justify-between;
+  }
+
+  .flex-c-g {
+    @apply flex flex-col items-center justify-center;
+  }
+  .flex-s-c {
+    @apply flex justify-center;
+  }
+  .float-padding {
+    padding: 26px 23px 26px 23px;
+  }
+  .swiper-button-next {
+    @apply left-[97%] z-40  h-[40px] w-[40px] translate-y-[-50%] rounded-full bg-gray-100 text-[#737373];
+  }
+}
