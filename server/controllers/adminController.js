@@ -54,8 +54,28 @@ exports.updateTeacherById = async (req, res) => {
 // Controller for fetching all students (excluding passwords)
 exports.getAllStudents = async (req, res) => {
   try {
-    const students = await Student.find().select("-password");
-    res.status(200).json(students);
+    const students = await Student.find()
+      .select("-password")
+      .populate("enrolledClass", "classGrade")
+      .exec();
+
+    // Map through students and return only necessary details including class name
+    const studentDetails = students.map((student) => {
+      return {
+        id: student._id,
+        studentName: student.name,
+        gender: student.gender,
+        dob: student.dob,
+        phone: student.phone,
+        email: student.email,
+        feesPaid: student.feesPaid,
+        enrollmentDate: student.enrollmentDate,
+
+        enrolledClass: student.enrolledClass ? student.enrolledClass : null,
+      };
+    });
+
+    res.status(200).json(studentDetails);
   } catch (error) {
     res.status(500).json({ message: "Error fetching students", error });
   }
@@ -64,8 +84,42 @@ exports.getAllStudents = async (req, res) => {
 // Controller for fetching all teachers (excluding passwords)
 exports.getAllTeachers = async (req, res) => {
   try {
+    // Fetch teachers
     const teachers = await Teacher.find().select("-password");
-    res.status(200).json(teachers);
+
+    // Replace subjectId and classId with subjectName and classGrade
+    const updatedTeachers = await Promise.all(
+      teachers.map(async (teacher) => {
+        // Retrieve assigned subjects' details
+        const assignedSubjectsPromises = teacher.assignedSubjects.map(
+          async (assignment) => {
+            const classData = await Class.findById(assignment.classId);
+            if (!classData) {
+              return { subjectName: null, className: null };
+            }
+
+            const subjectData = classData.classDetails.id(assignment.subjectId);
+            if (!subjectData) {
+              return { subjectName: null, className: classData.classGrade };
+            }
+
+            return {
+              subject: { name: subjectData.subjectName, _id: subjectData._id },
+              class: { name: classData.classGrade, _id: classData._id },
+            };
+          }
+        );
+
+        const assignedSubjects = await Promise.all(assignedSubjectsPromises);
+
+        return {
+          ...teacher.toObject(),
+          assignedSubjects,
+        };
+      })
+    );
+
+    res.status(200).json(updatedTeachers);
   } catch (error) {
     res.status(500).json({ message: "Error fetching teachers", error });
   }
