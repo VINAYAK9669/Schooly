@@ -41,6 +41,11 @@ router.get(
   "/analytics/financial/:period/:year",
   adminController.getFinancialAnalytics
 );
+// Financial analytics
+router.get(
+  "/analytics/financial/",
+  adminController.getYearlyFinancialAnalytics
+);
 
 // Handle Classes
 

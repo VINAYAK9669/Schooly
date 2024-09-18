@@ -50,6 +50,7 @@ function SignUp() {
             profession: data.profession,
             dob: data.dob,
             enrolledClass: data.enrolledClass,
+            feesPaid: Number(data.feesPaid),
           }
         : {
             name: data.name,
@@ -65,6 +66,8 @@ function SignUp() {
         ? signupStudent.mutate(signUpData)
         : signupTeacher.mutate(signUpData);
       dispatch(setCurrentUser({ email: data.email, password: data.password }));
+
+      console.log(signUpData);
     }
   };
 
@@ -282,9 +285,20 @@ function SignUp() {
               >
                 <option value="">--select class</option>
                 {classLists?.data?.data?.map((curClass) => (
-                  <option key={curClass._id} value={curClass._id}>
-                    {curClass.classGrade}&nbsp; -&nbsp; ₹ {curClass.studentFees}
-                  </option>
+                  <>
+                    <option key={curClass._id} value={curClass._id}>
+                      {curClass.classGrade}&nbsp; -&nbsp; ₹{" "}
+                      {curClass.studentFees}
+                    </option>
+                    <input
+                      type="text"
+                      disabled
+                      value={curClass?.studentFees || ""}
+                      {...register("feesPaid", {
+                        value: curClass?.studentFees,
+                      })}
+                    />
+                  </>
                 ))}
               </select>
               {errors.enrolledClass && (

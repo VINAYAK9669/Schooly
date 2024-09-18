@@ -1,49 +1,63 @@
-import { useState } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-
-// Example teacher data
-const teacherData = {
-  _id: "66e6ef545d0cd638b907c5cf",
-  name: "John Doe",
-  email: "johndoe10@example.com",
-  mobileNumber: "9876543210",
-  dob: "2000-01-01T00:00:00.000Z",
-  gender: "MALE",
-  salary: 0,
-  password: "$2a$12$8OGEYXaL8WGEbZg2gEIVquAK43DDD80NX20Jlarc8wb7n5B6eHURK",
-  assignedSubjects: [
-    {
-      subjectName: "Mathematics",
-      className: "5th",
-    },
-    {
-      subjectName: "Science",
-      className: "5th",
-    },
-  ],
-  __v: 2,
-};
+import useRouter from "../confiiguration/useRouter";
 
 const TeacherProfile = () => {
   const [isEditMode, setIsEditMode] = useState(false);
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, reset } = useForm();
+
+  const { getTeacherDeatils, updateTeacher } = useRouter();
+  console.log(getTeacherDeatils?.data?.data.data);
+
+  useEffect(() => {
+    getTeacherDeatils.refetch();
+  }, []);
+
+  useEffect(() => {
+    // Reset form with fetched data
+    if (getTeacherDeatils?.data?.data) {
+      const dob = getTeacherDeatils.data.data.dob;
+      const formattedDob =
+        dob && !isNaN(new Date(dob).getTime())
+          ? new Date(dob).toISOString().split("T")[0]
+          : ""; // Default to empty string if invalid date
+
+      reset({
+        name: getTeacherDeatils.data.data.name,
+        gender: getTeacherDeatils.data.data.gender,
+        dob: formattedDob,
+        mobileNumber: getTeacherDeatils.data.data.mobileNumber,
+        email: getTeacherDeatils.data.data.email,
+      });
+    }
+  }, [getTeacherDeatils?.data?.data, reset]);
 
   const onSubmit = (data) => {
-    console.log("Submitted data:", data);
-    // Handle form submission logic here
+    // Create a new object without the password field if it's empty
+    const { password, ...dataWithoutPassword } = data;
+
+    // Prepare form data for mutation
+    const formData = password
+      ? { ...dataWithoutPassword, password }
+      : dataWithoutPassword;
+
+    // Call the updateTeacher mutation with the prepared data
+    updateTeacher.mutate({ formData });
+    console.log(formData);
+    setIsEditMode(false);
   };
 
-  // Group subjects by class
-  const subjectsByClass = teacherData.assignedSubjects.reduce(
-    (acc, subject) => {
-      if (!acc[subject.className]) {
-        acc[subject.className] = [];
-      }
-      acc[subject.className].push(subject.subjectName);
-      return acc;
-    },
-    {}
-  );
+  // Group subjects by class only if `assignedSubjects` exists
+  const subjectsByClass = getTeacherDeatils?.data?.data.assignedSubjects
+    ? getTeacherDeatils?.data?.data.assignedSubjects.reduce((acc, subject) => {
+        if (!acc[subject.className]) {
+          acc[subject.className] = [];
+        }
+        acc[subject.className].push(subject.subjectName);
+        return acc;
+      }, {})
+    : {};
 
   return (
     <div className="p-6">
@@ -61,7 +75,6 @@ const TeacherProfile = () => {
           <input
             type="text"
             {...register("name")}
-            defaultValue={teacherData.name}
             disabled={!isEditMode}
             className={`mt-1 block w-full border ${
               isEditMode ? "border-gray-500" : "border-gray-300"
@@ -75,7 +88,6 @@ const TeacherProfile = () => {
           <input
             type="text"
             {...register("gender")}
-            defaultValue={teacherData.gender}
             disabled={!isEditMode}
             className={`mt-1 block w-full border ${
               isEditMode ? "border-gray-500" : "border-gray-300"
@@ -89,7 +101,6 @@ const TeacherProfile = () => {
           <input
             type="date"
             {...register("dob")}
-            defaultValue={new Date(teacherData.dob).toISOString().split("T")[0]}
             disabled={!isEditMode}
             className={`mt-1 block w-full border ${
               isEditMode ? "border-gray-500" : "border-gray-300"
@@ -103,7 +114,6 @@ const TeacherProfile = () => {
           <input
             type="text"
             {...register("mobileNumber")}
-            defaultValue={teacherData.mobileNumber}
             disabled={!isEditMode}
             className={`mt-1 block w-full border ${
               isEditMode ? "border-gray-500" : "border-gray-300"
@@ -117,7 +127,6 @@ const TeacherProfile = () => {
           <input
             type="email"
             {...register("email")}
-            defaultValue={teacherData.email}
             disabled={!isEditMode}
             className={`mt-1 block w-full border ${
               isEditMode ? "border-gray-500" : "border-gray-300"
@@ -148,13 +157,12 @@ const TeacherProfile = () => {
               Save
             </button>
           ) : (
-            <button
-              type="button"
+            <p
               onClick={() => setIsEditMode(true)}
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
             >
               Edit Personal Details
-            </button>
+            </p>
           )}
         </div>
       </form>
@@ -162,22 +170,26 @@ const TeacherProfile = () => {
       {/* Assigned Subjects Table */}
       <div>
         <h2 className="text-xl font-semibold mb-2">Assigned Subjects</h2>
-        <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
-          <thead>
-            <tr className="bg-gray-100 border-b">
-              <th className="px-4 py-2 text-left">Class</th>
-              <th className="px-4 py-2 text-left">Subjects</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(subjectsByClass).map(([className, subjects]) => (
-              <tr key={className} className="border-b">
-                <td className="px-4 py-2">{className}</td>
-                <td className="px-4 py-2">{subjects.join(", ")}</td>
+        {Object.keys(subjectsByClass).length > 0 ? (
+          <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
+            <thead>
+              <tr className="bg-gray-100 border-b">
+                <th className="px-4 py-2 text-left">Class</th>
+                <th className="px-4 py-2 text-left">Subjects</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {Object.entries(subjectsByClass).map(([className, subjects]) => (
+                <tr key={className} className="border-b">
+                  <td className="px-4 py-2">{className}</td>
+                  <td className="px-4 py-2">{subjects.join(", ")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p>No subjects assigned.</p> // Display message if no subjects
+        )}
       </div>
     </div>
   );

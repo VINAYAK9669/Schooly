@@ -1,41 +1,34 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/jsx-key */
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMemo } from "react";
 import { useTable } from "react-table";
 import Button from "../utils/Button";
-
-// Mock student data from backend
-const studentData = {
-  _id: "66e6caa5d5476a5682e075ae",
-  name: "STUDENT 5",
-  gender: "MALE",
-  dob: "2005-05-15T00:00:00.000Z",
-  phone: "1234567890",
-  email: "johndoe5@example.com",
-  feesPaid: 0,
-  enrolledClass: {
-    classGrade: "5th",
-    classDetails: [
-      { subjectName: "Mathematics", assignedTo: { teacherName: null } },
-      { subjectName: "Science", assignedTo: { teacherName: null } },
-      { subjectName: "English", assignedTo: { teacherName: null } },
-      { subjectName: "History", assignedTo: { teacherName: null } },
-      { subjectName: "Geography", assignedTo: { teacherName: null } },
-      { subjectName: "Hindi", assignedTo: { teacherName: null } },
-    ],
-    year: "2023-2024",
-    studentFees: 9000,
-  },
-  enrollmentDate: "2024-09-15T11:53:09.087Z",
-};
+import useRouter from "../confiiguration/useRouter";
 
 function StudentProfile() {
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, setValue } = useForm();
   const [isEditMode, setIsEditMode] = useState(false);
+  const { getStudentDetail, studentUpdate } = useRouter();
+
+  // Update form fields when data is fetched
+  useEffect(() => {
+    if (getStudentDetail?.data) {
+      const student = getStudentDetail.data;
+      setValue("name", student.name);
+      setValue("gender", student.gender);
+      setValue("dob", new Date(student.dob).toISOString().split("T")[0]);
+      setValue("phone", student.phone);
+      setValue("email", student.email);
+    }
+  }, [getStudentDetail?.data, setValue]);
 
   // React-table setup for class subjects
-  const data = useMemo(() => studentData.enrolledClass.classDetails, []);
+  const data = useMemo(
+    () => getStudentDetail?.data?.enrolledClass?.classDetails || [], // Fallback to an empty array if undefined
+    [getStudentDetail?.data?.enrolledClass?.classDetails] // Add as a dependency
+  );
   const columns = useMemo(
     () => [
       {
@@ -44,20 +37,24 @@ function StudentProfile() {
       },
       {
         Header: "Teacher Name",
-        accessor: (row) => row.assignedTo.teacherName || "Unassigned",
+        accessor: (row) => row.assignedTo?.teacherName || "Unassigned", // Safely handle undefined
       },
     ],
     []
   );
-
   const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
     useTable({ columns, data });
 
   const onSubmit = (formData, event) => {
     event.preventDefault(); // Prevent the default form submission
-    console.log("Updated student data:", formData);
+    console.log(formData);
+    studentUpdate.mutate({ id: getStudentDetail?.data._id, formData });
     setIsEditMode(false);
   };
+
+  useEffect(() => {
+    getStudentDetail.refetch();
+  }, []);
 
   return (
     <div className="bg-gray-100 p-6 rounded-lg shadow-md">
@@ -75,7 +72,6 @@ function StudentProfile() {
           <input
             type="text"
             {...register("name")}
-            defaultValue={studentData.name}
             disabled={!isEditMode}
             className={`mt-1 block w-full border ${
               isEditMode ? "border-gray-500" : "border-gray-300"
@@ -86,15 +82,16 @@ function StudentProfile() {
           <label className="block text-sm font-medium text-gray-700">
             Gender
           </label>
-          <input
-            type="text"
+          <select
             {...register("gender")}
-            defaultValue={studentData.gender}
             disabled={!isEditMode}
             className={`mt-1 block w-full border ${
               isEditMode ? "border-gray-500" : "border-gray-300"
             } rounded-md p-2`}
-          />
+          >
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
@@ -103,7 +100,6 @@ function StudentProfile() {
           <input
             type="date"
             {...register("dob")}
-            defaultValue={new Date(studentData.dob).toISOString().split("T")[0]}
             disabled={!isEditMode}
             className={`mt-1 block w-full border ${
               isEditMode ? "border-gray-500" : "border-gray-300"
@@ -117,7 +113,6 @@ function StudentProfile() {
           <input
             type="text"
             {...register("phone")}
-            defaultValue={studentData.phone}
             disabled={!isEditMode}
             className={`mt-1 block w-full border ${
               isEditMode ? "border-gray-500" : "border-gray-300"
@@ -131,7 +126,6 @@ function StudentProfile() {
           <input
             type="email"
             {...register("email")}
-            defaultValue={studentData.email}
             disabled={!isEditMode}
             className={`mt-1 block w-full border ${
               isEditMode ? "border-gray-500" : "border-gray-300"
@@ -149,20 +143,11 @@ function StudentProfile() {
               Save
             </button>
           ) : (
-            <>
-              {/* <button
-              type="button"
-              onClick={() => setIsEditMode(true)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-            >
-              Edit Personal Details
-            </button> */}
-              <div className="max-w-[320px] min-w-[280px] mx-auto">
-                <Button handleForm={() => setIsEditMode(true)}>
-                  Edit Personal Details
-                </Button>
-              </div>
-            </>
+            <div className="max-w-[320px] min-w-[280px] mx-auto">
+              <Button handleForm={() => setIsEditMode(true)}>
+                Edit Personal Details
+              </Button>
+            </div>
           )}
         </div>
       </form>
@@ -172,16 +157,18 @@ function StudentProfile() {
       <div className="mb-4 max-w-[320px]">
         <div className="flex justify-between mb-2">
           <span className="font-medium">Class Grade:</span>
-          <span>{studentData.enrolledClass.classGrade}</span>
+          <span>{getStudentDetail?.data?.enrolledClass.classGrade}</span>
         </div>
         <div className="flex justify-between mb-2">
           <span className="font-medium">Student Fees:</span>
-          <span>₹{studentData.enrolledClass.studentFees}</span>
+          <span>₹{getStudentDetail?.data?.enrolledClass.studentFees}</span>
         </div>
         <div className="flex justify-between mb-4">
           <span className="font-medium">Date of Enrollment:</span>
           <span>
-            {new Date(studentData.enrollmentDate).toLocaleDateString()}
+            {new Date(
+              getStudentDetail?.data?.enrollmentDate
+            ).toLocaleDateString()}
           </span>
         </div>
       </div>
@@ -192,7 +179,7 @@ function StudentProfile() {
           className="min-w-full table-auto bg-white shadow-lg rounded-md"
         >
           <thead className="bg-gray-200">
-            {headerGroups.map((headerGroup) => (
+            {headerGroups?.map((headerGroup) => (
               <tr {...headerGroup.getHeaderGroupProps()}>
                 {headerGroup.headers.map((column) => (
                   <th

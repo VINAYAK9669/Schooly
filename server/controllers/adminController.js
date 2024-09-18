@@ -255,26 +255,17 @@ exports.getFinancialAnalytics = async (req, res) => {
   try {
     const { period, year } = req.params;
 
-    // Calculate total income (assuming it's the sum of fees paid by all students)
-    const incomeMatchStage =
-      period === "monthly"
-        ? {
-            $match: {
-              enrollmentDate: {
-                $gte: new Date(`${year}-01-01`),
-                $lte: new Date(`${year}-12-31`),
-              },
-            },
-          }
-        : {
-            $match: {
-              enrollmentDate: {
-                $gte: new Date(`${year}-01-01`),
-                $lte: new Date(`${year}-12-31`),
-              },
-            },
-          };
+    // Match stage for income calculation (fees paid by students)
+    const incomeMatchStage = {
+      $match: {
+        enrollmentDate: {
+          $gte: new Date(`${year}-01-01`),
+          $lte: new Date(`${year}-12-31`),
+        },
+      },
+    };
 
+    // Group stage for income, based on period
     const incomeGroupStage =
       period === "monthly"
         ? {
@@ -296,54 +287,26 @@ exports.getFinancialAnalytics = async (req, res) => {
       { $sort: { _id: 1 } },
     ]);
 
-    // Calculate total investment (total salary paid to teachers)
-    const salaryMatchStage =
-      period === "monthly"
-        ? {
-            $match: {
-              salaryDate: {
-                $gte: new Date(`${year}-01-01`),
-                $lte: new Date(`${year}-12-31`),
-              },
-            },
-          }
-        : {
-            $match: {
-              salaryDate: {
-                $gte: new Date(`${year}-01-01`),
-                $lte: new Date(`${year}-12-31`),
-              },
-            },
-          };
-
-    const salaryGroupStage =
-      period === "monthly"
-        ? {
-            $group: {
-              _id: { $month: "$salaryDate" },
-              totalInvestment: { $sum: "$salary" },
-            },
-          }
-        : {
-            $group: {
-              _id: { $year: "$salaryDate" },
-              totalInvestment: { $sum: "$salary" },
-            },
-          };
-
-    const totalInvestment = await Teacher.aggregate([
-      salaryMatchStage,
-      salaryGroupStage,
-      { $sort: { _id: 1 } },
+    // Calculate total investment by summing up the salary of all teachers
+    const totalInvestmentData = await Teacher.aggregate([
+      {
+        $group: {
+          _id: null, // We are not grouping by date; just summing the salaries
+          totalInvestment: { $sum: "$salary" },
+        },
+      },
     ]);
 
-    // Calculate profit
-    const profit = totalIncome.map((income, index) => ({
+    const totalInvestment = totalInvestmentData.length
+      ? totalInvestmentData[0].totalInvestment
+      : 0;
+
+    // Map the profit calculation for each period
+    const profit = totalIncome.map((income) => ({
       period: income._id,
       totalIncome: income.totalIncome,
-      totalInvestment: totalInvestment[index]?.totalInvestment || 0,
-      profit:
-        income.totalIncome - (totalInvestment[index]?.totalInvestment || 0),
+      totalInvestment: totalInvestment, // Since we don't have monthly investment, use the total
+      profit: income.totalIncome - totalInvestment,
     }));
 
     res.status(200).json({
@@ -354,6 +317,72 @@ exports.getFinancialAnalytics = async (req, res) => {
     console.error("Error getting financial analytics:", error.message);
     res.status(400).json({
       message: "Error getting financial analytics",
+      error: error.message,
+    });
+  }
+};
+
+// Controller for getting yearly financial analytics
+exports.getYearlyFinancialAnalytics = async (req, res) => {
+  try {
+    // Calculate total income (sum of fees paid by all students) grouped by year
+    const totalIncomeByYear = await Student.aggregate([
+      {
+        $group: {
+          _id: { $year: "$enrollmentDate" }, // Group by year
+          totalIncome: { $sum: "$feesPaid" },
+        },
+      },
+    ]);
+
+    // Calculate total investment (sum of salaries paid to teachers) grouped by year
+    const totalInvestmentByYear = await Teacher.aggregate([
+      {
+        $group: {
+          _id: { $year: "$enrollmentDate" },
+
+          totalInvestment: { $sum: "$salary" },
+        },
+      },
+    ]);
+
+    // Create a dictionary to store the results
+    const resultByYear = {};
+
+    // Add total income to the dictionary
+    totalIncomeByYear.forEach((item) => {
+      const year = item._id;
+      resultByYear[year] = {
+        totalIncome: item.totalIncome,
+        totalInvestment: 0, // Default value, to be updated
+        profit: 0, // Default value, to be updated
+      };
+    });
+
+    // Add total investment to the dictionary
+    totalInvestmentByYear.forEach((item) => {
+      const year = item._id;
+      if (resultByYear[year]) {
+        resultByYear[year].totalInvestment = item.totalInvestment;
+        resultByYear[year].profit =
+          resultByYear[year].totalIncome - item.totalInvestment;
+      }
+    });
+
+    // Convert the dictionary to an array
+    const result = Object.keys(resultByYear).map((year) => ({
+      year,
+      ...resultByYear[year],
+    }));
+
+    res.status(200).json({
+      status: "success",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error getting yearly financial analytics:", error.message);
+    res.status(400).json({
+      message: "Error getting yearly financial analytics",
       error: error.message,
     });
   }

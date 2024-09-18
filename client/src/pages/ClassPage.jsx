@@ -35,6 +35,8 @@ function ClassPage() {
   const { classLists } = useRouter();
   const [selectedClass, setSelectedClass] = useState(null);
 
+  const { updateAssignedSubject } = useRouter();
+
   const data = {
     labels: ["January", "February", "March", "April", "May", "June", "July"],
     datasets: [
@@ -61,6 +63,9 @@ function ClassPage() {
     },
   };
 
+  useEffect(() => {
+    classLists.refetch();
+  }, [updateAssignedSubject.isSuccess]);
   useEffect(() => {
     classLists.refetch();
   }, []);

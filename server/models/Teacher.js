@@ -43,6 +43,10 @@ const teacherSchema = new mongoose.Schema({
     required: [true, "Password is required"],
     minlength: 6,
   },
+  enrollmentDate: {
+    type: Date, // Add this to track when the student enrolled
+    default: Date.now,
+  },
   assignedSubjects: [
     {
       subjectId: {
