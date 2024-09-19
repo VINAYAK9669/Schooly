@@ -1,6 +1,7 @@
 // apiUrls.js
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
+console.log(BASE_URL);
 
 // STUDENT API ENDPOINTS
 const studentSignUpApiURL = `${BASE_URL}students/create`;
