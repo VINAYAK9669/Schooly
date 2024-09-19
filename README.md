@@ -29,8 +29,6 @@ This project aims to provide a user-friendly interface for managing classes, tea
 
 - **Form Validation:** Implement client-side form validation to ensure data integrity and improve user experience.
 
-## Deployment
 
-- **Deployed Application:** [Link to Deployed Application](https://student-management-app-vinayak.netlify.app/signup)
 
 
